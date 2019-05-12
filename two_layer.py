@@ -68,14 +68,32 @@ class KIRBurgerInviscid(TwoLayerDifferenceScheme):
         self.t += self.tau
 
 
+class LaxWendroffInviscid(TwoLayerDifferenceScheme):
+    def step(self):
+        u = np.zeros_like(self.u_current)
+        u[0] = self.u_current[0]
+        u[-1] = self.u_current[-1]
+        for i in range(2, len(u) - 1):
+            #u[i] = self.u_current[i]-(self.tau/(2*self.h))*(self.u_current[i]**2-self.u_current[i-1]**2)
+            u[i] = self.u_current[i] -\
+                   0.5*self.tau/self.h*(0.5*self.u_current[i+1]**2 - 0.5*self.u_current[i-1]**2) + \
+                   0.5*(self.tau/self.h)**2*((0.5*(self.u_current[i] + self.u_current[i+1]))*
+                                             (0.5*self.u_current[i+1]**2 - 0.5*self.u_current[i]**2) -
+                                             (0.5*(self.u_current[i] + self.u_current[i-1]))*
+                                             (0.5*self.u_current[i]**2 - 0.5*self.u_current[i-1]**2))
+        self.u_current = u
+        self.t += self.tau
+
+
 if __name__ == '__main__':
 
     I = lambda t, x: np.exp(-2*(x-1)**2)
     R_plus = lambda u: u/2 - u**3
     R_minus = lambda u: u/2 + u**3 / 3
 
-    # method = RiemannKIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I, R_plus, R_minus)
-    method = KIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I)
+    #method = RiemannKIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I, R_plus, R_minus)
+    #method = KIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I)
+    method = LaxWendroffInviscid(0, 4, -1, 4, 1000, 1000, I)
     solution = np.array(list(method.solve()))
     ts = method.tgrid
     xs = method.xgrid
