@@ -85,24 +85,17 @@ class LaxWendroffInviscid(TwoLayerDifferenceScheme):
         self.t += self.tau
 
 
-if __name__ == '__main__':
-
-    I = lambda t, x: np.exp(-2*(x-1)**2)
-    R_plus = lambda u: u/2 - u**3
-    R_minus = lambda u: u/2 + u**3 / 3
-
-    #method = RiemannKIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I, R_plus, R_minus)
-    #method = KIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I)
-    method = LaxWendroffInviscid(0, 4, -1, 4, 1000, 1000, I)
-    solution = np.array(list(method.solve()))
-    ts = method.tgrid
-    xs = method.xgrid
-
+def _solve_and_describe(method_class, *args, **kwargs):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     from matplotlib import cm
     from matplotlib.ticker import LinearLocator, FormatStrFormatter
     import numpy as np
+
+    method = method_class(*args)
+    solution = np.array(list(method.solve()))
+    ts = method.tgrid
+    xs = method.xgrid
 
     plt.plot(xs, solution[0])
     plt.plot(xs, solution[10])
@@ -117,7 +110,30 @@ if __name__ == '__main__':
     plt.plot(xs, solution[900])
     plt.plot(xs, solution[1000])
     plt.grid()
+    if kwargs.get('title'):
+        plt.title(kwargs.get('title'))
     plt.show()
+
+if __name__ == '__main__':
+
+    #I = lambda t, x: np.exp(-2*(x-1)**2)
+    #I = lambda t, x: x < 2
+    R_plus = lambda u: u/2 - u**3
+    R_minus = lambda u: u/2 + u**3 / 3
+    # Графики будут отображены в том порядке, в котором следуют функции
+    I_list = [
+        lambda t, x: np.exp(-2*(x-1)**2),
+        lambda t, x: np.sin(np.exp(-(x-1)**2)),
+        lambda t, x: x < 2,
+        lambda t, x: x < t/2,
+    ]
+    #method = RiemannKIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I, R_plus, R_minus)
+    #method = KIRBurgerInviscid(0, 4, -1, 4, 1000, 1000, I)
+    for func in I_list:
+        args_solver = [0, 4, -1, 4, 1000, 1000, func]
+        _solve_and_describe(RiemannKIRBurgerInviscid, *(args_solver +[R_plus, R_minus]), title='KIR с инвариантами Римана')
+        _solve_and_describe(LaxWendroffInviscid, *args_solver, title='Схема Лакса-Вендроффа')
+        _solve_and_describe(KIRBurgerInviscid, *args_solver, title='KIR без инвариантов Римана')
 
     '''
 
